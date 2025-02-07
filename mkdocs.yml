@@ -27,9 +27,9 @@ theme:
   # For testing issue 7
   - navigation.instant
 
-# plugins:
-# - search
-# - languagetool
+plugins:
+- search
+- languagetool
 
 markdown_extensions:
   # Message/error/warning boxes
@@ -52,6 +52,3 @@ markdown_extensions:
   # for tabs
   - pymdownx.tabbed:
       alternate_style: true
-
-hooks:
-- spellcheck_hooks.py
