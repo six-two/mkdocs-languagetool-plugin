@@ -1,0 +1,5 @@
+- Allow ignoring specific files and specific error rules (reduce false prsitives)
+- Allow specifying a custom list of allowed words
+- Add option that outputs all unknown words -> can manually be checked and then added to the allowed words list
+- Add optional mode, where it can start and stop the languagetool server using docker
+- Read languagetool docs and figure out how to optimize performance -> Maybe do spell checking asynchronously in parallel thread?
