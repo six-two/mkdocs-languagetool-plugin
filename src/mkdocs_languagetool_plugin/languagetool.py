@@ -19,6 +19,13 @@ class LanguageToolError(Exception):
     pass
 
 
+def spellcheck_file(file_path: str, languagetool_url: str, language: str) -> list[LanguageToolResultEntry]:
+    with open(file_path, "r", encoding="utf-8") as f:
+        text = f.read()
+    
+    return spellcheck_text(text, languagetool_url, language)
+
+
 def spellcheck_text(text: str, languagetool_url: str, language: str) -> list[LanguageToolResultEntry]:
     """
     This function sends a request to the languagetool server and parses the response.

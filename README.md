@@ -43,3 +43,29 @@ plugins:
 - languagetool:
     languagetool_url: http://YOUR_SERVERS_IP_OR_HOSTNAME:8081/v2/check
 ```
+
+### Conditional spell checking
+
+Spellchecking causes a lot of CPU load and slows down site builds.
+So you may want to only run it at certain times (like before creating a new release).
+This can be done using environment variables that enable or disable the plugin.
+For example you could use the following snippet in your `mkdocs.yml`:
+```yaml
+plugins:
+- search
+- languagetool:
+    enabled: !ENV [SPELLCHECK, false]
+    languagetool_url: http://YOUR_SERVERS_IP_OR_HOSTNAME:8081/v2/check
+```
+
+Then a normal build (`mkdocs build`) would not enable the plugin.
+But if you want to do the spell checking, you can set the `SPELLCHECK` variable:
+```bash
+SPELLCHECK=true mkdocs serve
+```
+
+## Notable changes
+
+### Head
+
+- Added parallelized spell checking (via `async_threads`) and enabled it by default.

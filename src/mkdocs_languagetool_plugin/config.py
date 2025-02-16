@@ -16,3 +16,6 @@ class LanguageToolPluginConfig(Config):
 
     # Whether to print individual results (spelling errors)
     print_errors = Type(bool, default=True)
+
+    # When this is >= 0, the spell checking is done in the background usinx X threads
+    async_threads = Type(int, default=10)
