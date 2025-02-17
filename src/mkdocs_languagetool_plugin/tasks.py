@@ -12,11 +12,15 @@ LOGGER = get_plugin_logger(__name__)
 
 
 class ParallelLanguageToolTasks:
-    def __init__(self, languagetool_url, language, print_summary, print_errors):
+    def __init__(self, languagetool_url, plugin_config):
         self.languagetool_url = languagetool_url
-        self.language = language
-        self.print_summary = print_summary
-        self.print_errors = print_errors
+        self.language = plugin_config.language
+        self.print_summary = plugin_config.print_summary
+        self.print_errors = plugin_config.print_errors
+        self.custom_request_options = {
+            "disabledRules": ",".join(plugin_config.ignore_rules),
+        }
+
         self.results: dict[File,list[LanguageToolResultEntry]] = {}
 
     def start_parallel(self, file_list: list[File], max_parallel_tasks: int):
@@ -24,7 +28,7 @@ class ParallelLanguageToolTasks:
         # Use ThreadPoolExecutor to run tasks in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_parallel_tasks) as executor:
             # Submit tasks asynchronously
-            self.future_to_task = {executor.submit(spellcheck_file, file.abs_src_path, self.languagetool_url, self.language): file for file in file_list}
+            self.future_to_task = {executor.submit(spellcheck_file, file.abs_src_path, self.languagetool_url, self.language, self.custom_request_options): file for file in file_list}
 
     def wait_for_parallel(self):
         # Wait for all futures to complete and get the results
@@ -45,15 +49,18 @@ class ParallelLanguageToolTasks:
 
 def process_sequential_languagetool_tasks(file_list: list[File], plugin_config: LanguageToolPluginConfig):
     all_spelling_complaints: dict[str,list[LanguageToolResultEntry]] = {} # file path -> spelling results
+    custom_request_options = {
+        "disabledRules": ",".join(plugin_config.ignore_rules),
+    }
 
     for file in file_list:
-        results = spellcheck_file(file.abs_src_path, plugin_config.config.languagetool_url, plugin_config.config.language)
-        if plugin_config.config.print_errors:
+        results = spellcheck_file(file.abs_src_path, plugin_config.languagetool_url, plugin_config.language, custom_request_options)
+        if plugin_config.print_errors:
             print_individual_errors(file, results)
 
         all_spelling_complaints[file.src_uri] = results
 
-    if plugin_config.config.print_summary:
+    if plugin_config.print_summary:
         print_results_summary(all_spelling_complaints)
 
 

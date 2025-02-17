@@ -26,14 +26,14 @@ def is_server_reachable(languagetool_url: str):
     except LanguageToolError:
         return False
 
-def spellcheck_file(file_path: str, languagetool_url: str, language: str) -> list[LanguageToolResultEntry]:
+def spellcheck_file(file_path: str, languagetool_url: str, language: str, custom_request_options: dict = {}) -> list[LanguageToolResultEntry]:
     with open(file_path, "r", encoding="utf-8") as f:
         text = f.read()
     
-    return spellcheck_text(text, languagetool_url, language)
+    return spellcheck_text(text, languagetool_url, language, custom_request_options)
 
 
-def spellcheck_text(text: str, languagetool_url: str, language: str) -> list[LanguageToolResultEntry]:
+def spellcheck_text(text: str, languagetool_url: str, language: str, custom_request_options: dict = {}) -> list[LanguageToolResultEntry]:
     """
     This function sends a request to the languagetool server and parses the response.
 
@@ -44,6 +44,7 @@ def spellcheck_text(text: str, languagetool_url: str, language: str) -> list[Lan
     """
 
     http_body = {
+        **custom_request_options,
         "language": language,
         "text": text,
     }

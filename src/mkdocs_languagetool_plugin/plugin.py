@@ -1,3 +1,4 @@
+import os
 # pip
 from mkdocs.exceptions import PluginError
 from mkdocs.plugins import BasePlugin, get_plugin_logger
@@ -19,14 +20,18 @@ class LanguageToolPlugin(BasePlugin[LanguageToolPluginConfig]):
         else:
             self.docker_handler = None
 
+        self.ignore_files = [os.path.normpath(x) for x in self.config.ignore_files]
+
     def on_files(self, files: Files, config) -> Files:
         # Process markdown files only
-        markdown_files = [file for file in files if file.src_path.endswith(".md")]
+        markdown_files = [file for file in files
+                          if file.src_uri.endswith(".md")
+                             and os.path.normpath(file.src_uri) not in self.ignore_files]
 
         try:
             if self.config.async_threads > 0:
                 # Run in parallel in the background
-                self.tasks = ParallelLanguageToolTasks(self.config.languagetool_url, self.config.language, self.config.print_summary, self.config.print_errors)
+                self.tasks = ParallelLanguageToolTasks(self.config.languagetool_url, self.config)
                 self.tasks.start_parallel(markdown_files, self.config.async_threads)
             else:
                 self.tasks = None

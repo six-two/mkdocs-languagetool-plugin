@@ -1,4 +1,4 @@
-from mkdocs.config.config_options import Type
+from mkdocs.config.config_options import Type, ListOfItems
 from mkdocs.config.base import Config
 
 DEFAULT_LANGUAGE_TOOL_URL = "http://localhost:8081/v2/check"
@@ -24,3 +24,7 @@ class LanguageToolPluginConfig(Config):
 
     # When this is enabled, the plugin will start a language tool instance if the server is not reachable
     start_languagetool = Type(bool, default=False)
+
+    # Ignore these files and spelling rules
+    ignore_rules = ListOfItems(Type(str), default=[])
+    ignore_files = ListOfItems(Type(str), default=[])

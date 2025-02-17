@@ -68,5 +68,6 @@ SPELLCHECK=true mkdocs serve
 
 ### Head
 
+- Added options to ignore specific files (`ignore_files`) and specific spelling rules (`ignore_rules`).
 - Added support for automatically starting the LanguageTool server via docker (`start_languagetool` setting).
 - Added parallelized spell checking (via `async_threads`) and enabled it by default.

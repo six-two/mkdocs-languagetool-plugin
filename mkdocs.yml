@@ -30,8 +30,13 @@ theme:
 plugins:
 - search
 - languagetool:
-    # async_threads: 10
+    # async_threads: 0
     start_languagetool: true
+    ignore_files:
+    - test/../german.md
+    ignore_rules:
+    - EN_A_VS_AN
+    - MORFOLOGIK_RULE_EN_US
 # - languagetool
 
 markdown_extensions:
