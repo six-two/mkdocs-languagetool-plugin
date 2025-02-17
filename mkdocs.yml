@@ -30,7 +30,8 @@ theme:
 plugins:
 - search
 - languagetool:
-    async_threads: 10
+    # async_threads: 10
+    start_languagetool: true
 # - languagetool
 
 markdown_extensions:

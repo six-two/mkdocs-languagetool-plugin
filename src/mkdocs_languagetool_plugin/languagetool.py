@@ -19,6 +19,13 @@ class LanguageToolError(Exception):
     pass
 
 
+def is_server_reachable(languagetool_url: str):
+    try:
+        spellcheck_text("test", languagetool_url, "en-US")
+        return True
+    except LanguageToolError:
+        return False
+
 def spellcheck_file(file_path: str, languagetool_url: str, language: str) -> list[LanguageToolResultEntry]:
     with open(file_path, "r", encoding="utf-8") as f:
         text = f.read()

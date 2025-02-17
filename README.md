@@ -68,4 +68,5 @@ SPELLCHECK=true mkdocs serve
 
 ### Head
 
+- Added support for automatically starting the LanguageTool server via docker (`start_languagetool` setting).
 - Added parallelized spell checking (via `async_threads`) and enabled it by default.

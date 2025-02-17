@@ -1,35 +1,37 @@
 # pip
 from mkdocs.exceptions import PluginError
 from mkdocs.plugins import BasePlugin, get_plugin_logger
-from mkdocs.structure.files import File, Files
+from mkdocs.structure.files import Files
 # local
 from .config import LanguageToolPluginConfig
-from .languagetool import spellcheck_file, LanguageToolError, LanguageToolResultEntry
-from .tasks import LanguageToolTasks, print_results_summary, print_individual_errors
+from .languagetool import LanguageToolError
+from .tasks import ParallelLanguageToolTasks, process_sequential_languagetool_tasks
+from .docker import DockerHandler
 
 LOGGER = get_plugin_logger(__name__)
 
 
 class LanguageToolPlugin(BasePlugin[LanguageToolPluginConfig]):
-    def on_files(self, files: Files, config) -> Files:
-        self.all_spelling_complaints: dict[str,list[LanguageToolResultEntry]] = {} # file path -> spelling results
+    def on_config(self, config):
+        if self.config.start_languagetool:
+            self.docker_handler = DockerHandler(self.config.languagetool_url)
+            self.docker_handler.start_service()
+        else:
+            self.docker_handler = None
 
+    def on_files(self, files: Files, config) -> Files:
         # Process markdown files only
         markdown_files = [file for file in files if file.src_path.endswith(".md")]
 
         try:
             if self.config.async_threads > 0:
                 # Run in parallel in the background
-                self.tasks = LanguageToolTasks(self.config.languagetool_url, self.config.language, self.config.print_summary, self.config.print_errors)
+                self.tasks = ParallelLanguageToolTasks(self.config.languagetool_url, self.config.language, self.config.print_summary, self.config.print_errors)
                 self.tasks.start_parallel(markdown_files, self.config.async_threads)
             else:
                 self.tasks = None
-                # For each markdown file, we will check spelling/grammar
-                for markdown_file in markdown_files:
-                    self.check_markdown_file(markdown_file)
-
-                if self.config.print_summary:
-                    print_results_summary(self.all_spelling_complaints)
+                # Run sequential right now
+                process_sequential_languagetool_tasks(markdown_files, self.config)
 
             return files
         except LanguageToolError as ex:
@@ -38,10 +40,6 @@ class LanguageToolPlugin(BasePlugin[LanguageToolPluginConfig]):
     def on_post_build(self, config) -> None:
         if self.tasks:
             self.tasks.wait_for_parallel()
-
-    def check_markdown_file(self, file: File) -> None:
-        results = spellcheck_file(file.abs_src_path, self.config.languagetool_url, self.config.language)
-        if self.config.print_errors:
-            print_individual_errors(file, results)
-
-        self.all_spelling_complaints[file.src_uri] = results
+        
+        if self.docker_handler:
+            self.docker_handler.stop_service()

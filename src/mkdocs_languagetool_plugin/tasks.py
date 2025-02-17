@@ -5,12 +5,13 @@ from mkdocs.structure.files import File, Files
 from mkdocs.plugins import get_plugin_logger
 # local
 from .languagetool import spellcheck_file, LanguageToolResultEntry
+from .config import LanguageToolPluginConfig
 
 
 LOGGER = get_plugin_logger(__name__)
 
 
-class LanguageToolTasks:
+class ParallelLanguageToolTasks:
     def __init__(self, languagetool_url, language, print_summary, print_errors):
         self.languagetool_url = languagetool_url
         self.language = language
@@ -40,6 +41,20 @@ class LanguageToolTasks:
         
         if self.print_summary:
             print_results_summary(self.results)
+
+
+def process_sequential_languagetool_tasks(file_list: list[File], plugin_config: LanguageToolPluginConfig):
+    all_spelling_complaints: dict[str,list[LanguageToolResultEntry]] = {} # file path -> spelling results
+
+    for file in file_list:
+        results = spellcheck_file(file.abs_src_path, plugin_config.config.languagetool_url, plugin_config.config.language)
+        if plugin_config.config.print_errors:
+            print_individual_errors(file, results)
+
+        all_spelling_complaints[file.src_uri] = results
+
+    if plugin_config.config.print_summary:
+        print_results_summary(all_spelling_complaints)
 
 
 def print_individual_errors(file: File, spellcheck_results: list[LanguageToolResultEntry]) -> None:
