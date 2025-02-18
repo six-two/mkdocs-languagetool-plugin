@@ -1,7 +1,6 @@
 from mkdocs.config.config_options import Type, ListOfItems
 from mkdocs.config.base import Config
 
-DEFAULT_LANGUAGE_TOOL_URL = "http://localhost:8081/v2/check"
 MY_DOCKER_IMAGE = "ghcr.io/six-two/languagetool"
 
 class LanguageToolPluginConfig(Config):
@@ -9,7 +8,13 @@ class LanguageToolPluginConfig(Config):
     The plugin config, that will be parsed from the settings supplied in `mkdocs.yaml`
     """
     # The language tool server to connect to (full URL)
-    languagetool_url = Type(str, default=DEFAULT_LANGUAGE_TOOL_URL)
+    languagetool_host = Type(str, default="127.0.0.1")
+
+    # Port to use and bind to
+    languagetool_port = Type(int, default=8081)
+
+    # Protocol to use (http for localhost)
+    languagetool_protocol = Type(str, default="http")
 
     # The language to use for spell checking
     language = Type(str, default="en-US")
@@ -41,3 +46,7 @@ class LanguageToolPluginConfig(Config):
     # Directory with known word lists to use for the languagetool container.
     # This only works if the plugin starts the docker container.
     custom_known_words_directory = Type(str, default="")
+
+
+def get_languagetool_url(plugin_config: LanguageToolPluginConfig) -> str:
+    return f"{plugin_config.languagetool_protocol}://{plugin_config.languagetool_host}:{plugin_config.languagetool_port}/v2/check"

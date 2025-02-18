@@ -41,7 +41,7 @@ You can specify it like this in your `mkdocs.yml`:
 plugins:
 - search
 - languagetool:
-    languagetool_url: http://YOUR_SERVERS_IP_OR_HOSTNAME:8081/v2/check
+    languagetool_host: YOUR_SERVERS_IP_OR_HOSTNAME
 ```
 
 ### Conditional spell checking
@@ -68,6 +68,7 @@ SPELLCHECK=true mkdocs serve
 
 ### Head
 
+- Split `languagetool_url` into `languagetool_protocol`, `languagetool_host` and `languagetool_port`.
 - Added option `custom_known_words_directory` to add known words to all or specific languages.
 - Added option `languagetool_docker_image` to overwrite which docker image (or tag) to use.
 - Added option `write_unknown_words_to_file` to automatically generate a list of unknown / potentially misspelled words.

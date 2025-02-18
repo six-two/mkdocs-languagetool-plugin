@@ -21,6 +21,7 @@ class LanguageToolPlugin(BasePlugin[LanguageToolPluginConfig]):
             self.docker_handler = None
 
         self.ignore_files = [os.path.normpath(x) for x in self.config.ignore_files]
+        self.tasks = None
 
     def on_files(self, files: Files, config) -> Files:
         # Process markdown files only
@@ -31,10 +32,9 @@ class LanguageToolPlugin(BasePlugin[LanguageToolPluginConfig]):
         try:
             if self.config.async_threads > 0:
                 # Run in parallel in the background
-                self.tasks = ParallelLanguageToolTasks(self.config.languagetool_url, self.config)
+                self.tasks = ParallelLanguageToolTasks(self.config)
                 self.tasks.start_parallel(markdown_files, self.config.async_threads)
             else:
-                self.tasks = None
                 # Run sequential right now
                 process_sequential_languagetool_tasks(markdown_files, self.config)
 

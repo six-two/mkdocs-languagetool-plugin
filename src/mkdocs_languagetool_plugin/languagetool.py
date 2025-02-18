@@ -6,24 +6,13 @@ from typing import NamedTuple
 class LanguageToolResultEntry(NamedTuple):
     rule_id: str
     category_id: str
-    context: str
-    offset: int
-    length: int
+    misspelled_string: str
+    context_text: str
+    context_colored: str
+    line_start: int
+    line_end: int
     raw_dict: dict
 
-    def misspelled_string(self) -> str:
-        """
-        Returns the word/sequence that causes the error
-        """
-        end_offset = self.offset + self.length
-        return self.context[self.offset:end_offset]
-
-    def colored_context(self) -> str:
-        """
-        Return the context with the misspelled word highlighted in red using ANSI escape sequences
-        """
-        end_offset = self.offset + self.length
-        return f"{self.context[:self.offset]}\033[0;31m{self.misspelled_string()}\033[0m{self.context[end_offset:]}"
 
 class LanguageToolError(Exception):
     pass
@@ -65,19 +54,33 @@ def spellcheck_text(text: str, languagetool_url: str, language: str, custom_requ
 
     if response.status_code == 200:
         result = response.json()
-        return [parse_language_tool_match(match) for match in result.get("matches", [])]
+        return [parse_language_tool_match(match, text) for match in result.get("matches", [])]
     else:
         raise LanguageToolError(f"LanguageTool server at {languagetool_url} returned unexpected status code {response.status_code}: {response.text}")
 
 
-def parse_language_tool_match(match: dict) -> LanguageToolResultEntry:
+def parse_language_tool_match(match: dict, full_text: str) -> LanguageToolResultEntry:
     try:
+        context_start = match["context"]["offset"]
+        context_end = context_start + match["context"]["length"]
+        context_text = match["context"]["text"]
+        misspelled_string = context_text[context_start:context_end]
+        context_colored = f"{context_text[:context_start]}\033[0;31m{misspelled_string}\033[0m{context_text[context_end:]}"
+
+        # Figure out wich lines in the original text the error is in
+        full_text_start = match["offset"]
+        full_text_end = full_text_start + match["length"]
+        match_start_line_index = full_text[:full_text_start].count("\n") + 1
+        match_end_line_index = match_start_line_index + full_text[full_text_start:full_text_end].count("\n")
+
         return LanguageToolResultEntry(
             rule_id=match["rule"]["id"],
             category_id=match["rule"]["category"]["id"],
-            context=match["context"]["text"],
-            offset=match["context"]["offset"],
-            length=match["context"]["length"],
+            misspelled_string=misspelled_string,
+            context_text=context_text,
+            context_colored=context_colored,
+            line_start=match_start_line_index,
+            line_end=match_end_line_index,
             raw_dict=match,
         )
     except KeyError as e:

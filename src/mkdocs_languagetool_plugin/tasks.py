@@ -5,15 +5,16 @@ from mkdocs.structure.files import File, Files
 from mkdocs.plugins import get_plugin_logger
 # local
 from .languagetool import spellcheck_file, LanguageToolResultEntry
-from .config import LanguageToolPluginConfig
+from .config import LanguageToolPluginConfig, get_languagetool_url
 
 
 LOGGER = get_plugin_logger(__name__)
 
 
 class ParallelLanguageToolTasks:
-    def __init__(self, languagetool_url, plugin_config):
+    def __init__(self, plugin_config):
         self.plugin_config = plugin_config
+        self.languagetool_url = get_languagetool_url(plugin_config)
         self.custom_request_options = {
             "disabledRules": ",".join(plugin_config.ignore_rules),
         }
@@ -25,7 +26,7 @@ class ParallelLanguageToolTasks:
         # Use ThreadPoolExecutor to run tasks in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_parallel_tasks) as executor:
             # Submit tasks asynchronously
-            self.future_to_task = {executor.submit(spellcheck_file, file.abs_src_path, self.plugin_config.languagetool_url, self.plugin_config.language, self.custom_request_options): file for file in file_list}
+            self.future_to_task = {executor.submit(spellcheck_file, file.abs_src_path, self.languagetool_url, self.plugin_config.language, self.custom_request_options): file for file in file_list}
 
     def wait_for_parallel(self):
         # Wait for all futures to complete and get the results
@@ -44,12 +45,13 @@ class ParallelLanguageToolTasks:
 
 def process_sequential_languagetool_tasks(file_list: list[File], plugin_config: LanguageToolPluginConfig):
     all_spelling_complaints: dict[str,list[LanguageToolResultEntry]] = {} # file path -> spelling results
+    languagetool_url = get_languagetool_url(plugin_config)
     custom_request_options = {
         "disabledRules": ",".join(plugin_config.ignore_rules),
     }
 
     for file in file_list:
-        results = spellcheck_file(file.abs_src_path, plugin_config.languagetool_url, plugin_config.language, custom_request_options)
+        results = spellcheck_file(file.abs_src_path, languagetool_url, plugin_config.language, custom_request_options)
         if plugin_config.print_errors:
             print_individual_errors(file, results)
 
@@ -68,7 +70,8 @@ def result_post_processing(plugin_config: LanguageToolPluginConfig, all_spelling
 
 def print_individual_errors(file: File, spellcheck_results: list[LanguageToolResultEntry]) -> None:
     for result in spellcheck_results:
-        LOGGER.info(f"{file.src_uri} | {result.rule_id} | {result.colored_context()}")
+        line_range = f"{result.line_start}" if result.line_start == result.line_end else f"{result.line_start}-{result.line_end}"
+        LOGGER.info(f"{file.src_uri}:{line_range} | {result.rule_id} | {result.context_colored}")
 
 
 def print_results_summary(results: dict[File,list[LanguageToolResultEntry]]) -> None:
@@ -91,7 +94,7 @@ def write_unknown_words_to_file(output_path: str, results: dict[File,list[Langua
     for error_list in results.values():
         for error in error_list:
             if error.rule_id.startswith("MORFOLOGIK_RULE_"):
-                unknown_words.add(error.misspelled_string())
+                unknown_words.add(error.misspelled_string)
 
     file_contents = "\n".join(sorted(unknown_words)) + "\n"
     with open(output_path, "w") as f:

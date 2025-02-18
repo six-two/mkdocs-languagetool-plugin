@@ -7,7 +7,7 @@ import time
 from mkdocs.plugins import get_plugin_logger
 # local
 from .languagetool import is_server_reachable
-from .config import LanguageToolPluginConfig, DEFAULT_LANGUAGE_TOOL_URL, MY_DOCKER_IMAGE
+from .config import LanguageToolPluginConfig, get_languagetool_url, MY_DOCKER_IMAGE
 
 LOGGER = get_plugin_logger(__name__)
 
@@ -16,10 +16,10 @@ class DockerHandler:
     def __init__(self, plugin_config: LanguageToolPluginConfig):
         self.plugin_config = plugin_config
         self.started_container = False
-        self.languagetool_url = plugin_config.languagetool_url
+        self.languagetool_url = get_languagetool_url(plugin_config)
 
-        if self.languagetool_url != DEFAULT_LANGUAGE_TOOL_URL:
-            LOGGER.warning(f"When starting a container, the default LanguageTool URL {DEFAULT_LANGUAGE_TOOL_URL} is expected. But the URL {self.languagetool_url} was given.")
+        if self.plugin_config.languagetool_host not in ["127.0.0.1", "::1", "localhost"]:
+            LOGGER.warning(f"When starting a container, setting the 'languagetool_host' to a localhost value is expected, but '{self.plugin_config.languagetool_host}' was given.")
 
         if plugin_config.custom_known_words_directory:
             if not plugin_config.start_languagetool:
@@ -32,19 +32,22 @@ class DockerHandler:
                 LOGGER.warning(f"The 'custom_known_words_directory' directory ({plugin_config.custom_known_words_directory}) does not contain any files matching the pattern 'custom_words_*.txt'. Create a file called 'custom_words_any.txt' and add all words to ignore in it (one per line).")
 
     def start_service(self):
-        if self.plugin_config.custom_known_words_directory:
+        if self.plugin_config.custom_known_words_directory and is_server_reachable(self.languagetool_url):
             # Stop the current server if one exists, since we want to mount the correcy list of words to ignore
             try:
                 subprocess.check_output(["docker", "stop", "mkdocs-languagetool-plugin"], stderr=subprocess.STDOUT)
-                LOGGER.info("Stopped already running LanguageTool container")
+                if is_server_reachable(self.languagetool_url):
+                    LOGGER.info("Stopped already running LanguageTool container")
+                else:
+                    LOGGER.warning("Stop command successfull but service is still running. Did you manually start a LanguageTool server? You can also try to solve this problem it by adding 'languagetool_port: <SOME_FREE_PORT>' in your mkdocs.yml")
             except subprocess.CalledProcessError as ex:
-                pass
+                LOGGER.warning("Failed to stop already running LanguageTool container")
 
         if not is_server_reachable(self.languagetool_url):
             LOGGER.info("LanguageTool server is not reachable, starting docker container")
             try:
                 mount_known_words = ["-v", f"{self.plugin_config.custom_known_words_directory}:/share:ro"] if self.plugin_config.custom_known_words_directory else []
-                run_command_and_return_output(["docker", "run", "--rm", "-p", "8081:8010", "--name", "mkdocs-languagetool-plugin", "-e", "Java_Xmx=2g", "-d", *mount_known_words, self.plugin_config.languagetool_docker_image])
+                run_command_and_return_output(["docker", "run", "--rm", "-p", f"{self.plugin_config.languagetool_port}:8010", "--name", "mkdocs-languagetool-plugin", "-e", "Java_Xmx=2g", "-d", *mount_known_words, self.plugin_config.languagetool_docker_image])
                 self.started_container = True
 
                 # wait for the container to be started (up to 15 seconds)
@@ -69,4 +72,4 @@ class DockerHandler:
 
 def run_command_and_return_output(command: list[str]) -> bytes:
     LOGGER.debug(f"Running command: {shlex.join(command)}")
-    subprocess.check_output(command, stderr=subprocess.STDOUT)
+    return subprocess.check_output(command, stderr=subprocess.STDOUT)
