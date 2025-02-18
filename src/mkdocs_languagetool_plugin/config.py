@@ -2,6 +2,7 @@ from mkdocs.config.config_options import Type, ListOfItems
 from mkdocs.config.base import Config
 
 DEFAULT_LANGUAGE_TOOL_URL = "http://localhost:8081/v2/check"
+MY_DOCKER_IMAGE = "ghcr.io/six-two/languagetool"
 
 class LanguageToolPluginConfig(Config):
     """
@@ -31,3 +32,12 @@ class LanguageToolPluginConfig(Config):
 
     # Output unknown words to this file (make it easier to create a known words file)
     write_unknown_words_to_file = Type(str, default="")
+
+    # Docker image of languagetool to use
+    # The most popular seems to be: erikvl87/languagetool
+    # My image ghcr.io/six-two/languagetool is based on erikvl87/languagetool, but adds an script to add custom words to the dictionaries
+    languagetool_docker_image = Type(str, default=MY_DOCKER_IMAGE)
+
+    # Directory with known word lists to use for the languagetool container.
+    # This only works if the plugin starts the docker container.
+    custom_known_words_directory = Type(str, default="")

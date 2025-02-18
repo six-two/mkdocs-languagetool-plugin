@@ -68,7 +68,9 @@ SPELLCHECK=true mkdocs serve
 
 ### Head
 
-- Added option (`write_unknown_words_to_file`) to automatically generate a list of unknown / potentially misspelled words
+- Added option `custom_known_words_directory` to add known words to all or specific languages.
+- Added option `languagetool_docker_image` to overwrite which docker image (or tag) to use.
+- Added option `write_unknown_words_to_file` to automatically generate a list of unknown / potentially misspelled words.
 - Added options to ignore specific files (`ignore_files`) and specific spelling rules (`ignore_rules`).
 - Added support for automatically starting the LanguageTool server via docker (`start_languagetool` setting).
 - Added parallelized spell checking (via `async_threads`) and enabled it by default.

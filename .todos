@@ -1,3 +1,1 @@
-- Allow specifying a custom list of allowed words
-- Add option that outputs all unknown words -> can manually be checked and then added to the allowed words list
-- Read languagetool docs and figure out how to optimize performance -> Maybe do spell checking asynchronously in parallel thread?
+- Read languagetool docs and figure out how to optimize performance
