@@ -13,10 +13,7 @@ LOGGER = get_plugin_logger(__name__)
 
 class ParallelLanguageToolTasks:
     def __init__(self, languagetool_url, plugin_config):
-        self.languagetool_url = languagetool_url
-        self.language = plugin_config.language
-        self.print_summary = plugin_config.print_summary
-        self.print_errors = plugin_config.print_errors
+        self.plugin_config = plugin_config
         self.custom_request_options = {
             "disabledRules": ",".join(plugin_config.ignore_rules),
         }
@@ -28,23 +25,21 @@ class ParallelLanguageToolTasks:
         # Use ThreadPoolExecutor to run tasks in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_parallel_tasks) as executor:
             # Submit tasks asynchronously
-            self.future_to_task = {executor.submit(spellcheck_file, file.abs_src_path, self.languagetool_url, self.language, self.custom_request_options): file for file in file_list}
+            self.future_to_task = {executor.submit(spellcheck_file, file.abs_src_path, self.plugin_config.languagetool_url, self.plugin_config.language, self.custom_request_options): file for file in file_list}
 
     def wait_for_parallel(self):
         # Wait for all futures to complete and get the results
         for future in concurrent.futures.as_completed(self.future_to_task):
             task_file_argument = self.future_to_task[future]
             try:
-                result = future.result()  # This will block until the task is finished
+                result = future.result()
                 self.results[task_file_argument] = result
-                if self.print_errors:
+                if self.plugin_config.print_errors:
                     print_individual_errors(task_file_argument, result)
-                # print(f"File {task_file_argument.src_uri} result: {result}")
             except Exception as e:
                 LOGGER.error(f"File {task_file_argument.src_uri} generated an exception: {traceback.format_exc()}")
         
-        if self.print_summary:
-            print_results_summary(self.results)
+        result_post_processing(self.plugin_config, self.results)
 
 
 def process_sequential_languagetool_tasks(file_list: list[File], plugin_config: LanguageToolPluginConfig):
@@ -60,8 +55,15 @@ def process_sequential_languagetool_tasks(file_list: list[File], plugin_config: 
 
         all_spelling_complaints[file.src_uri] = results
 
+    result_post_processing(plugin_config, all_spelling_complaints)
+
+
+def result_post_processing(plugin_config: LanguageToolPluginConfig, all_spelling_complaints: dict[str,list[LanguageToolResultEntry]]) -> None:
     if plugin_config.print_summary:
         print_results_summary(all_spelling_complaints)
+
+    if plugin_config.write_unknown_words_to_file:
+        write_unknown_words_to_file(plugin_config.write_unknown_words_to_file, all_spelling_complaints)
 
 
 def print_individual_errors(file: File, spellcheck_results: list[LanguageToolResultEntry]) -> None:
@@ -82,6 +84,19 @@ def print_results_summary(results: dict[File,list[LanguageToolResultEntry]]) -> 
 
     LOGGER.info("Suggestion count by rule:\n" + format_counters(rule_id_counters))
     LOGGER.info("Suggestion count per file:\n" + format_counters(file_error_count))
+
+
+def write_unknown_words_to_file(output_path: str, results: dict[File,list[LanguageToolResultEntry]]) -> None:
+    unknown_words: set[str] = set()
+    for error_list in results.values():
+        for error in error_list:
+            if error.rule_id.startswith("MORFOLOGIK_RULE_"):
+                unknown_words.add(error.misspelled_string())
+
+    file_contents = "\n".join(sorted(unknown_words)) + "\n"
+    with open(output_path, "w") as f:
+        f.write(file_contents)
+
 
 def format_counters(counters: dict[str,int]) -> str:
     # Sort counters from hightest to lowest and print one per line

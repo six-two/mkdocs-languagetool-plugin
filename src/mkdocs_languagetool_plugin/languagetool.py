@@ -11,9 +11,19 @@ class LanguageToolResultEntry(NamedTuple):
     length: int
     raw_dict: dict
 
-    def colored_context(self) -> str:
+    def misspelled_string(self) -> str:
+        """
+        Returns the word/sequence that causes the error
+        """
         end_offset = self.offset + self.length
-        return f"{self.context[:self.offset]}\033[0;31m{self.context[self.offset:end_offset]}\033[0m{self.context[end_offset:]}"
+        return self.context[self.offset:end_offset]
+
+    def colored_context(self) -> str:
+        """
+        Return the context with the misspelled word highlighted in red using ANSI escape sequences
+        """
+        end_offset = self.offset + self.length
+        return f"{self.context[:self.offset]}\033[0;31m{self.misspelled_string()}\033[0m{self.context[end_offset:]}"
 
 class LanguageToolError(Exception):
     pass

@@ -28,3 +28,6 @@ class LanguageToolPluginConfig(Config):
     # Ignore these files and spelling rules
     ignore_rules = ListOfItems(Type(str), default=[])
     ignore_files = ListOfItems(Type(str), default=[])
+
+    # Output unknown words to this file (make it easier to create a known words file)
+    write_unknown_words_to_file = Type(str, default="")
