@@ -1,7 +1,7 @@
 import concurrent.futures
 import traceback
 # pip
-from mkdocs.structure.files import File, Files
+from mkdocs.structure.files import File
 from mkdocs.plugins import get_plugin_logger
 # local
 from .languagetool import spellcheck_file, LanguageToolResultEntry
@@ -37,7 +37,7 @@ class ParallelLanguageToolTasks:
                 self.results[task_file_argument] = result
                 if self.plugin_config.print_errors:
                     print_individual_errors(task_file_argument, result)
-            except Exception as e:
+            except Exception:
                 LOGGER.error(f"File {task_file_argument.src_uri} generated an exception: {traceback.format_exc()}")
         
         result_post_processing(self.plugin_config, self.results)

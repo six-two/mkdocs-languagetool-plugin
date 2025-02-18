@@ -66,7 +66,7 @@ SPELLCHECK=true mkdocs serve
 
 ## Notable changes
 
-### Head
+### Version 0.1.0
 
 - Split `languagetool_url` into `languagetool_protocol`, `languagetool_host` and `languagetool_port`.
 - Added option `custom_known_words_directory` to add known words to all or specific languages.

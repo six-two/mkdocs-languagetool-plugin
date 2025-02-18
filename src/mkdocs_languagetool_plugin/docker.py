@@ -23,7 +23,7 @@ class DockerHandler:
 
         if plugin_config.custom_known_words_directory:
             if not plugin_config.start_languagetool:
-                LOGGER.warning(f"The 'custom_known_words_directory' option only works when you set the 'start_languagetool' option to 'true'")
+                LOGGER.warning("The 'custom_known_words_directory' option only works when you set the 'start_languagetool' option to 'true'")
 
             if plugin_config.languagetool_docker_image != MY_DOCKER_IMAGE:
                 LOGGER.warning(f"The 'custom_known_words_directory' option is designed to be used with the docker image {MY_DOCKER_IMAGE} and may not work with other images. You specified the image {plugin_config.languagetool_docker_image}")
@@ -40,7 +40,7 @@ class DockerHandler:
                     LOGGER.info("Stopped already running LanguageTool container")
                 else:
                     LOGGER.warning("Stop command successfull but service is still running. Did you manually start a LanguageTool server? You can also try to solve this problem it by adding 'languagetool_port: <SOME_FREE_PORT>' in your mkdocs.yml")
-            except subprocess.CalledProcessError as ex:
+            except subprocess.CalledProcessError:
                 LOGGER.warning("Failed to stop already running LanguageTool container")
 
         if not is_server_reachable(self.languagetool_url):
