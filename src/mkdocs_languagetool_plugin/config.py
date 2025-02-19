@@ -28,8 +28,9 @@ class LanguageToolPluginConfig(Config):
     # When this is >= 0, the spell checking is done in the background usinx X threads
     async_threads = Type(int, default=10)
 
-    # When this is enabled, the plugin will start a language tool instance if the server is not reachable
-    start_languagetool = Type(bool, default=False)
+    # This prevents generating hundreds of errors (one per page) when there is a general issue with language tool.
+    # Set it to 0 to never exit regardless of how many errors occur
+    exit_on_error = Type(bool, default=True)
 
     # Ignore these files and spelling rules
     ignore_rules = ListOfItems(Type(str), default=[])
@@ -38,14 +39,26 @@ class LanguageToolPluginConfig(Config):
     # Output unknown words to this file (make it easier to create a known words file)
     write_unknown_words_to_file = Type(str, default="")
 
+    # Flag to enable or disable starting docker containers
+    docker_create_container = Type(bool, default=True)
+
     # Docker image of languagetool to use
     # The most popular seems to be: erikvl87/languagetool
     # My image ghcr.io/six-two/languagetool is based on erikvl87/languagetool, but adds an script to add custom words to the dictionaries
-    languagetool_docker_image = Type(str, default=MY_DOCKER_IMAGE)
+    docker_image = Type(str, default=MY_DOCKER_IMAGE)
+
+    # The docker-compatible engine to use (docker/podman)
+    docker_binary = Type(str, default="docker")
+
+    # The name of the container to start and stop. Useful if you have multiple builds running at once
+    docker_container_name = Type(str, default="mkdocs-languagetool-plugin")
+
+    # Options tweaking the docker command. For example you can set environment variables to configure Java
+    docker_custom_arguments = ListOfItems(Type(str), default=["-e", "Java_Xmx=2g"])
 
     # Directory with known word lists to use for the languagetool container.
     # This only works if the plugin starts the docker container.
-    custom_known_words_directory = Type(str, default="")
+    docker_known_words_directory = Type(str, default="")
 
 
 def get_languagetool_url(plugin_config: LanguageToolPluginConfig) -> str:

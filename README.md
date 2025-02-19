@@ -55,7 +55,7 @@ plugins:
 - search
 - languagetool:
     enabled: !ENV [SPELLCHECK, false]
-    languagetool_url: http://YOUR_SERVERS_IP_OR_HOSTNAME:8081/v2/check
+    languagetool_host: YOUR_SERVERS_IP_OR_HOSTNAME
 ```
 
 Then a normal build (`mkdocs build`) would not enable the plugin.
@@ -65,6 +65,17 @@ SPELLCHECK=true mkdocs serve
 ```
 
 ## Notable changes
+
+### HEAD
+
+- Renamed some options for better consistency:
+    - Renamed `start_languagetool` to `docker_create_container`.
+    - Renamed `languagetool_docker_image` to `docker_image`.
+    - Renamed `custom_known_words_directory` to `docker_known_words_directory`.
+- Added more options to configure docker:
+    - `docker_binary` for specifying the alternative docker engines like podman.
+    - `docker_container_name` for changing the name of the container.
+    - `docker_custom_arguments` for adding parameters to the `docker run` command.
 
 ### Version 0.1.0
 

@@ -49,8 +49,10 @@ def spellcheck_text(text: str, languagetool_url: str, language: str, custom_requ
     }
     try:
         response = requests.post(languagetool_url, data=http_body)
+    except requests.exceptions.ConnectionError:
+        raise LanguageToolError(f"Error connecting to language tool server {languagetool_url}: Connection failed")
     except Exception as ex:
-        raise LanguageToolError(f"Error connecting to language tool server {languagetool_url}: {ex}")
+        raise LanguageToolError(f"Error connecting to language tool server {languagetool_url}: [{type(ex).__name__}] {ex}")
 
     if response.status_code == 200:
         result = response.json()

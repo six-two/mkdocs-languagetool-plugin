@@ -14,7 +14,7 @@ LOGGER = get_plugin_logger(__name__)
 
 class LanguageToolPlugin(BasePlugin[LanguageToolPluginConfig]):
     def on_config(self, config):
-        if self.config.start_languagetool:
+        if self.config.docker_create_container:
             self.docker_handler = DockerHandler(self.config)
             self.docker_handler.start_service()
         else:
