@@ -1,6 +1,7 @@
 import json
-import requests
 from typing import NamedTuple
+# pip install requests
+import requests
 
 
 class LanguageToolResultEntry(NamedTuple):
